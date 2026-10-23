@@ -1,0 +1,80 @@
+/* 검색엔진용 코스 페이지(routes/*.html, tools/build_seo_pages.py가 만든다).
+   main.css의 카드·인증센터 목록 모양을 그대로 쓰고, 지도 없이 위아래로 읽는 한 장짜리 화면으로 바꾼다.
+   색은 main.css의 :root 변수만 쓴다. */
+html,
+body.static-page {
+  height: auto;
+  overflow: auto;
+  touch-action: auto;
+}
+
+body.static-page {
+  background: var(--bg);
+}
+
+.page-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+}
+
+.page-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.page-map,
+.page-cta {
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: var(--on-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.page-map:hover,
+.page-cta:hover {
+  text-decoration: none;
+  background: var(--accent);
+}
+
+.page-cta {
+  align-self: center;
+  min-width: 240px;
+  padding: 13px 28px;
+  text-align: center;
+}
+
+.page-cta-note {
+  text-align: center;
+}
+
+.stop-name {
+  display: inline;
+  font-size: 1rem;
+}
+
+.page-others a {
+  font-weight: 600;
+}
+
+.page-foot {
+  text-align: center;
+}
+
+/* 첫 화면 HTML의 코스 링크 목록 (스크립트가 뜨기 전 잠깐, 또는 스크립트를 못 읽는 검색엔진용) */
+.static-intro {
+  padding: 4px 2px;
+}
+
+.static-intro p {
+  margin: 8px 0 14px;
+  color: var(--muted);
+}
