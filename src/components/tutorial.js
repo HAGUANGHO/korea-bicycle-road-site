@@ -266,6 +266,17 @@ const TOURS = {
         title: '지도의 숙박 표시',
         text: '지도에 [[1일차 숙박]], [[2일차 숙박]]처럼 적힌 곳이 그날 하루를 마치고 묵을 곳이에요. 누르면 어느 근처인지 나와요.',
       },
+      // 엑셀로 내려받기 (사용자 요청). 실제로 내려받지는 않고 버튼만 짚는다.
+      {
+        at: PLANNER,
+        view: 'list',
+        waitFor: '.plan-excel',
+        enter: () => document.querySelector('.plan-excel')?.scrollIntoView({ block: 'center' }),
+        target: () => '.plan-excel',
+        revealTop: true,
+        title: '엑셀로 받아 두기',
+        text: '다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 날짜마다 거리·오르막·묵을 곳과 전화번호가 한 줄씩, 지나는 곳마다 날씨가 따로 정리돼 있어요.',
+      },
       {
         title: '이제 직접 짜 보세요',
         text: '원래 설정으로 돌려 놓을게요. 일정 조건은 이 브라우저에 저장돼서 다음에 와도 그대로예요.',

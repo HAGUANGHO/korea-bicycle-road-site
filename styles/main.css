@@ -1746,6 +1746,12 @@ textarea:focus {
   font-size: 0.85rem;
 }
 
+/* 엑셀 파일로 내려받기: 날짜 카드 아래 한 줄 전체 */
+.plan-excel {
+  width: 100%;
+  margin-top: 12px;
+}
+
 .plan-fold-all button:hover {
   background: var(--surface-2);
   filter: none;

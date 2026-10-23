@@ -20,6 +20,7 @@ import {
 import {
   fetchForecasts, weatherText, windName, windEffect, bearing, isoDate, FORECAST_DAYS,
 } from '../utils/weather.js';
+import { buildXlsx, downloadBlob } from '../utils/xlsx.js';
 
 // 하루 거리 대신 몇박 며칠을 저장하면서(v3) 이름을 바꿨다. v2에서는 코스·구간·숙소 범위·출발일만 가져온다.
 const KEY = 'bike.planner.v3';
@@ -133,6 +134,92 @@ function weatherCells(w, heading) {
         <i class="wind-arrow" style="transform:rotate(${(w.windFrom + 180) % 360}deg)">↑</i>
         ${windName(w.windFrom)} ${w.wind.toFixed(0)}m/s ${effect.text}
       </span>`;
+}
+
+// 짠 일정을 엑셀 파일로 (사용자 요청: 깔끔하게 만들어서 엑셀로 내려받기).
+// '일정' 시트는 하루 한 줄(거리·고도·묵을 곳), '지나는 곳' 시트는 그날 지나는 곳마다 한 줄(구간 거리·날씨).
+// 날씨는 불러온 것만 넣는다(출발일이 멀거나 지난 날짜면 빈칸).
+function planWorkbook({
+  title, summary, notes, days, startDate, lodgingOf, profile,
+}) {
+  const dateText = (i) => (startDate
+    ? dayDate(startDate, i).toLocaleDateString(locale, { month: 'long', day: 'numeric', weekday: 'short' }) : '');
+  const km = (v) => Math.round(v);
+  const text = (v) => ({ v, s: 'text' });
+  const num = (v) => ({ v, s: 'num' });
+  const head = (labels) => labels.map((v) => ({ v, s: 'head' }));
+
+  const planHead = head([t('일차'), t('날짜'), t('출발'), t('도착'), t('거리 (km)'), t('오르막 (m)'), t('내리막 (m)'),
+    t('최고 고도 (m)'), t('지나는 인증센터'), t('묵을 곳'), t('전화번호'), t('메모')]);
+  const top = [
+    [{ v: title, s: 'title' }],
+    [{ v: summary, s: 'sub' }],
+    ...notes.map((n) => [{ v: n, s: 'sub' }]),
+    [],
+  ];
+  const planRows = days.map((d, i) => {
+    const lodging = lodgingOf(d);
+    const memo = [
+      ...d.transit.map((leg) => `${shortName(leg.from)} → ${shortName(leg.to)} ${t('버스 이동 (거리에서 뺌)')}`),
+      d.final ? t('도착') : '',
+      d.noLodging ? t('묵을 곳을 아직 정하지 못했어요') : '',
+    ].filter(Boolean).join(' · ');
+    return [
+      text(t('{n}일차', { n: i + 1 })), text(dateText(i)), text(d.from), text(d.to), num(km(d.end - d.start)),
+      num(d.climb?.up ?? null), num(d.climb?.down ?? null), num(d.climb?.max ?? null),
+      { v: d.waypoints.slice(1, -1).map((wp) => wp.label).join(', '), s: 'wrap' },
+      text(d.final ? '' : lodging ? (lodging.name || t('이름 없는 숙소')) : ''), text(lodging?.phone ?? ''), { v: memo, s: 'wrap' },
+    ];
+  });
+  const sum = (f) => days.reduce((n, d) => n + (f(d) ?? 0), 0);
+  const totalRow = [
+    { v: t('합계'), s: 'total' }, { v: '', s: 'total' }, { v: '', s: 'total' }, { v: '', s: 'total' },
+    { v: km(sum((d) => d.end - d.start)), s: 'totalNum' },
+    { v: profile ? sum((d) => d.climb?.up) : null, s: 'totalNum' },
+    { v: profile ? sum((d) => d.climb?.down) : null, s: 'totalNum' },
+    { v: profile ? Math.max(...days.map((d) => d.climb?.max ?? 0)) : null, s: 'totalNum' },
+    ...Array(4).fill({ v: '', s: 'total' }),
+  ];
+  // 제목·안내 줄은 표 폭만큼 합친다 (끝의 빈 줄은 빼고)
+  const wide = (rows, last) => rows.slice(0, -1).map((_, r) => `A${r + 1}:${last}${r + 1}`);
+
+  const wxHead = head([t('일차'), t('날짜'), t('지나는 곳'), t('다음 지점까지 (km)'), t('오르막 (m)'),
+    t('날씨'), t('최저 기온 (°C)'), t('최고 기온 (°C)'), t('강수 확률 (%)'), t('바람')]);
+  const wxRows = days.flatMap((d, i) => d.waypoints.map((wp, j) => {
+    const next = d.waypoints[j + 1];
+    const w = d.forecasts?.[j];
+    const heading = next ? bearing(wp, next) : bearing(d.waypoints[j - 1] ?? wp, wp);
+    const wind = w ? `${windName(w.windFrom)} ${w.wind.toFixed(1)}m/s ${windEffect(heading, w.windFrom).text}` : '';
+    return [
+      text(j === 0 ? t('{n}일차', { n: i + 1 }) : ''), text(j === 0 ? dateText(i) : ''), text(wp.label),
+      num(next ? km(next.km - wp.km) : null), num(next && profile ? climbStats(profile, wp.km, next.km).up : null),
+      text(w ? weatherText(w.code).text : ''), num(w ? Math.round(w.tMin) : null), num(w ? Math.round(w.tMax) : null),
+      num(w?.rain ?? null), text(wind),
+    ];
+  }));
+  const wxTop = [
+    [{ v: title, s: 'title' }],
+    [{ v: t('날씨는 그날 지나는 곳들의 예보로, 출발 {n}일 전부터 볼 수 있어요.', { n: FORECAST_DAYS }), s: 'sub' }],
+    [],
+  ];
+  return buildXlsx([
+    {
+      name: t('일정'),
+      rows: [...top, planHead, ...planRows, totalRow],
+      cols: [8, 16, 18, 18, 10, 10, 10, 12, 30, 28, 15, 30],
+      merges: wide(top, 'L'),
+      freezeRows: top.length + 1,
+      heights: { 1: 28, [top.length + 1]: 30 },
+    },
+    {
+      name: t('지나는 곳'),
+      rows: [...wxTop, wxHead, ...wxRows],
+      cols: [8, 16, 22, 14, 10, 14, 11, 11, 11, 30],
+      merges: wide(wxTop, 'J'),
+      freezeRows: wxTop.length + 1,
+      heights: { 1: 28, [wxTop.length + 1]: 30 },
+    },
+  ]);
 }
 
 // 사용법 시연용 (사용자 요청: 국토종주 예시로 보여 준다). 지금 조건을 읽어 두고, 예시로 바꿨다가 되돌린다.
@@ -360,6 +447,7 @@ export function plannerPage() {
         return;
       }
       setStatus(cells[i], '');
+      d.forecasts = got; // 엑셀 내려받기에도 넣는다
       const slots = slotsOf(i);
       wps.forEach((wp, j) => {
         const next = wps[j + 1] ?? wp;
@@ -497,7 +585,31 @@ export function plannerPage() {
       </div>
       <p class="limit-warning plan-unassigned" hidden></p>
       <ol class="plan-days"></ol>
+      <button class="secondary plan-excel" type="button">${esc(t('엑셀 파일로 내려받기'))}</button>
     `;
+    result.querySelector('.plan-excel').addEventListener('click', () => {
+      const name = preset.name.replace(/ \([^)]*km\)$/, '');
+      const route = stops.to.loopEnd ? t('{name} 출발, 한 바퀴', { name: stops.from.name }) : `${stops.from.name} → ${stops.to.name}`;
+      const detourText = CROSS_DETOURS.filter((x) => detourModes[x.id])
+        .map((x) => `${x.label} ${detourModes[x.id] === 'roundtrip' ? t('왕복') : t('버스 이용')}`);
+      const blob = planWorkbook({
+        title: t('{name} 일정', { name }),
+        summary: [route, ...detourText, nightsLabel(days.length), t('총 {km}', { km: formatKm(Math.round(course.totalKm)) }),
+          startDate && t('{date} 출발', { date: dayDate(startDate, 0).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' }) }),
+        ].filter(Boolean).join(' · '),
+        notes: [
+          Math.abs(gap) >= 1 ? gapNote.textContent : '',
+          t('거리와 고도는 추정치라 실제와 조금 다를 수 있어요.'),
+          `${t('국토종주 자전거길 안내')} · ${location.origin}${location.pathname}`,
+        ].filter(Boolean),
+        days,
+        startDate,
+        profile,
+        lodgingOf: (d) => d.pickKey && onCourse.find((l) => lodgingKey(l) === d.pickKey),
+      });
+      const safe = (s) => s.replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+      downloadBlob(blob, `${safe(`${t('{name} 일정', { name })} ${route}`)}${startDate ? ` ${startDate}` : ''}.xlsx`);
+    });
     // 날짜별 거리의 합이 총 거리와 다르면 알린다 (사용자 요청: 배정 안 된 거리)
     const gap = Math.round(plan.unassignedKm);
     const gapNote = result.querySelector('.plan-unassigned');
