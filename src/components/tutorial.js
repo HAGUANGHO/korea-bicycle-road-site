@@ -7,7 +7,7 @@ import { t } from '../i18n.js';
 import { load, save } from '../utils/storage.js';
 import { esc } from '../utils/dom.js';
 import { demoCategory, clearCategories } from './poi-layer.js';
-import { fitShown } from './app-map.js';
+import { fitShown, getMap } from './app-map.js';
 import { plannerApi } from '../pages/planner.js';
 
 const KEYS = { main: 'bike.tutorial', planner: 'bike.tutorial.planner' }; // 'never' 또는 보지 않을 날짜(YYYY-MM-DD)
@@ -31,7 +31,8 @@ const openOptions = () => {
 
 // 각 단계: at = 보여줄 화면(주소, 없으면 그대로), view = 휴대폰에서 목록('list')·지도('map') 중 무엇을 보일지,
 // demo = 켜 보일 시설, enter = 이 단계에서 해 보일 동작, waitFor = 나타날 때까지 기다릴 요소,
-// target = 비출 곳(보이는 첫 요소, 없거나 숨어 있으면 가운데에 설명만).
+// target = 비출 곳(보이는 첫 요소, 없거나 숨어 있으면 가운데에 설명만), revealTop = 휴대폰에서 비출 곳을 목록 맨 위로 올린다,
+// mapAbove = 휴대폰에서 이 지도 표시를 설명 카드 위로 옮겨 밝힌다.
 const TOURS = {
   main: {
     // 끝내거나 닫으면 처음 화면(코스 목록, 휴대폰은 지도)으로 돌아간다 (사용자 요청)
@@ -179,6 +180,7 @@ const TOURS = {
         view: 'list',
         enter: openOptions,
         target: () => '.planner-form .trip-days-field',
+        revealTop: true, // 휴대폰에서 설명 카드가 몇 박 칸과 [계산]을 가렸다 (사용자 지적)
         title: '몇박 며칠',
         text: '몇 박인지 적으면 바로 아래에 몇박 며칠과 하루 평균 거리가 나와요. [[계산]]을 누르면 총 거리를 날수로 똑같이 나누고, 그만큼 간 곳 근처에서 숙소를 찾아 하루를 끊어요. 그래서 날마다 거리가 조금씩 달라요. 날짜마다 따로 바꿀 수도 있는데, 그건 조금 뒤에 보여 드릴게요.',
       },
@@ -224,6 +226,7 @@ const TOURS = {
         waitFor: '.plan-edit-row',
         enter: () => { document.querySelector('.plan-day details').open = true; },
         target: () => '.plan-day .plan-edit-row',
+        revealTop: true, // 휴대폰에서 설명 카드가 이날 거리·묵을 곳을 가렸다 (사용자 지적)
         title: '날마다 다르게',
         text: '어느 날은 150km, 어느 날은 80km처럼 달리고 싶으면 [[이날 거리]]를 바꿔요. [[묵을 곳]]에는 도착지 앞뒤로 숙소 찾는 범위 안의 숙소가 나오고, 고르면 지도에서 보여 줘요. 어느 날 거리를 바꾸면 그 차이를 뒷날들이 똑같이 나눠 맡아서 총 거리가 맞아요. [[계산]]을 다시 누르면 날짜별로 바꾼 건 지워지고 똑같이 나눈 일정으로 돌아가요.',
       },
@@ -234,6 +237,8 @@ const TOURS = {
         enter: () => document.querySelector('.plan-day .show-lodging')?.click(),
         keepPois: true,
         target: () => (listShown() ? '.poi-list' : null),
+        // 휴대폰은 첫날 숙박지를 설명 카드 위 지도 가운데로 옮기고 그곳을 밝힌다 (사용자 지적: 카드가 가려 숙소가 안 보였다)
+        mapAbove: '.leaflet-marker-pane .plan-stop',
         title: '첫날 묵을 곳',
         text: () => {
           if (!listShown()) return t('[[지도에서 숙소 전부 보기]]를 눌러 봤어요. 첫날 도착지 주변 숙소가 지도에 떠요. 점을 누르면 이름과 지도 앱 링크가 나와요.');
@@ -275,13 +280,14 @@ function keepSnapshot() {
 }
 
 // 목록 카드 안에 있는 요소면 카드를 스크롤해 화면 가운데로 가져온다 (페이지 전체는 움직이지 않는다)
-function reveal(selector) {
+// top이면 맨 위로 올려 설명 카드가 그 아래에 들어갈 자리를 만든다 (휴대폰: 가운데에 두면 긴 설명 카드가 가렸다)
+function reveal(selector, top = false) {
   const target = selector && document.querySelector(selector);
   const box = target?.closest('.sheet-body');
   if (!box) return;
   const r = target.getBoundingClientRect();
   const b = box.getBoundingClientRect();
-  box.scrollTop += r.top - b.top - Math.max(16, (b.height - r.height) / 2);
+  box.scrollTop += r.top - b.top - (top ? 16 : Math.max(16, (b.height - r.height) / 2));
 }
 
 const sleep = (ms) => new Promise((r) => { setTimeout(r, ms); });
@@ -401,7 +407,7 @@ export function startTutorial(kind = 'main') {
     }
     const sel = step.target?.();
     if (sel && document.querySelector(sel)?.closest('.sheet-body')) {
-      reveal(sel);
+      reveal(sel, step.revealTop && isPhone());
       await sleep(250);
     }
     if (step.demo) {
@@ -410,6 +416,13 @@ export function startTutorial(kind = 'main') {
     }
     if (id !== token) return;
     place();
+    if (step.mapAbove && isPhone() && !visible(step.target?.())) {
+      const mark = document.querySelector(step.mapAbove)?.getBoundingClientRect();
+      if (mark) {
+        const want = card.getBoundingClientRect().top / 2;
+        getMap()?.panBy([0, mark.top + mark.height / 2 - want], { animate: false });
+      }
+    }
     delete root.dataset.busy;
   }
 
@@ -453,6 +466,10 @@ export function startTutorial(kind = 'main') {
       else top = window.innerHeight - ch - 24;
     }
     Object.assign(card.style, { left: `${left}px`, top: `${top}px` });
+    // 지도를 보여 주는 단계: 카드 위 지도를 어둡게 하지 않는다
+    if (!r && isPhone() && step.mapAbove) {
+      Object.assign(spot.style, { left: '6px', top: '6px', width: `${window.innerWidth - 12}px`, height: `${Math.max(0, top - gap - 6)}px` });
+    }
   }
 
   function close(hide) {
