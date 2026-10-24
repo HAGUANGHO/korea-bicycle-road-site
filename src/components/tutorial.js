@@ -363,7 +363,7 @@ export function startTutorial(kind = 'main') {
   root.innerHTML = `
     <div class="tutorial-spot"></div>
     <div class="tutorial-card">
-      <button class="tutorial-skip" type="button">${esc(t('건너뛰기'))}</button>
+      <button class="tutorial-skip" type="button">${esc(t('건너뛰기(SKIP)'))}</button>
       <p class="tutorial-step"></p>
       <h2 class="tutorial-title"></h2>
       <p class="tutorial-text"></p>
@@ -477,10 +477,13 @@ export function startTutorial(kind = 'main') {
       else top = window.innerHeight - ch - 24;
     }
     Object.assign(card.style, { left: `${left}px`, top: `${top}px` });
-    // 지도를 보여 주는 단계: 카드 위 지도를 어둡게 하지 않는다
-    if (!r && isPhone() && step.mapAbove) {
-      Object.assign(spot.style, { left: '6px', top: '6px', width: `${window.innerWidth - 12}px`, height: `${Math.max(0, top - gap - 6)}px` });
+    // 지도를 보여 주는 단계: 카드 위 지도는 화면 끝에서 카드까지 통째로 밝힌다
+    // (사용자 지적: 안쪽에 둥근 상자로 밝히니 카드와 사이에 어두운 띠가 남고 버튼이 잘려 이상했다)
+    const wide = !r && isPhone() && step.mapAbove;
+    if (wide) {
+      Object.assign(spot.style, { left: '-20px', top: '-20px', width: `${window.innerWidth + 40}px`, height: `${Math.max(0, top + 20)}px` });
     }
+    spot.style.borderRadius = wide ? '0' : '';
   }
 
   function close(hide) {
