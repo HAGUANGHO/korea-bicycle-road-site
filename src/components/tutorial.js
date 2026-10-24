@@ -9,6 +9,7 @@ import { esc } from '../utils/dom.js';
 import { demoCategory, clearCategories } from './poi-layer.js';
 import { fitShown, getMap } from './app-map.js';
 import { plannerApi } from '../pages/planner.js';
+import { hideBoard } from './board-window.js';
 
 const KEYS = { main: 'bike.tutorial', planner: 'bike.tutorial.planner' }; // 'never' 또는 보지 않을 날짜(YYYY-MM-DD)
 const isPhone = () => window.matchMedia('(max-width: 720px)').matches;
@@ -352,6 +353,7 @@ export function tutorialRunning() {
 
 export function startTutorial(kind = 'main') {
   running?.close();
+  hideBoard(); // 게시판 창이 사용법을 가리지 않게 (2026-10-24 사용자 지적)
   const tour = TOURS[kind];
   const STEPS = tour.steps;
   const root = document.createElement('div');

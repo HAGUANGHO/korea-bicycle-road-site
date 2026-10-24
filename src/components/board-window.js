@@ -158,14 +158,29 @@ function create() {
 // path: '/board'(목록) · '/board/write' · '/board/12'. 열 때마다 그 화면을 새로 불러온다 (사용자 요청: 최신 글이 보여야)
 export function openBoard(path = '/board') {
   if (!win) create();
+  keptDraft = false;
   setOpen(true);
   setCollapsed(false);
   show(path);
 }
 
+// 사용법이 시작되면 게시판 창을 묻지 않고 숨긴다 (2026-10-24 사용자 지적: 창이 사용법 위에 남았다).
+// 쓰던 글이 있으면 지우지 않고 두었다가, 메뉴로 다시 열 때 그대로 보여 준다.
+let keptDraft = false;
+export function hideBoard() {
+  if (!win || win.hidden) return;
+  keptDraft = Boolean(body.firstElementChild?.isDirty?.());
+  win.querySelector('.board-confirm')?.remove();
+  setOpen(false);
+}
+
 // 메뉴의 게시판 버튼: 닫혀 있으면 목록으로 열고(사용자 요청: 상세가 열리면 안 된다), 접혀 있으면 펴고, 열려 있으면 닫는다
 export function toggleBoard() {
-  if (!win || win.hidden) openBoard('/board');
+  if (win?.hidden && keptDraft) {
+    keptDraft = false;
+    setOpen(true);
+    setCollapsed(false);
+  } else if (!win || win.hidden) openBoard('/board');
   else if (win.classList.contains('collapsed')) setCollapsed(false);
   else close();
 }
