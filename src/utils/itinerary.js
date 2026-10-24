@@ -187,12 +187,12 @@ function nearestCenterLabel(course, p) {
   return t('{name} 근처', { name: shortName(nearest.center) });
 }
 
-// 코스 위 숙소 목록 (누적 거리 순).
-// 숙소는 실제 길 1km 안의 것이라, 지도에 구간을 그릴 때(coursePart)와 같은 허용 거리 + 1km 안이면 코스 위로 본다.
+// 코스 위 시설 목록 (누적 거리 순). 숙소(일정 나누기)와 엑셀의 보급할 곳(편의점·식당·카페)에 쓴다.
+// 시설은 실제 길 1km 안의 것이라, 지도에 구간을 그릴 때(coursePart)와 같은 허용 거리 + 1km 안이면 코스 위로 본다.
 // 예전에는 선에서 15km까지 받아 같은 노선의 다른 갈래(예: 탄금대에서 충주댐 쪽) 숙소까지 들어왔다 (사용자 지적).
-export function lodgingsOnCourse(course, lodgings) {
+export function poisOnCourse(course, pois) {
   const centerKms = course.points.map((p) => p.km);
-  return lodgings
+  return pois
     .filter((l) => l.routeIds.some((id) => course.routeIds.includes(id)))
     .flatMap((l) => project(course, l).map((hit) => ({ ...l, ...hit })))
     .filter((l) => l.offset <= allowedOffset(centerKms, l.km) + 1)

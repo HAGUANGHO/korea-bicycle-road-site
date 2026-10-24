@@ -9,10 +9,10 @@ import {
   showRoutes, showPlanStops, panToVisible, getMap,
 } from '../components/app-map.js';
 import {
-  getPois, enableCategory, setPopupExtra, setPoiFilter, showPoi, POI_NOTICE,
+  getPois, enableCategory, setPopupExtra, setPoiFilter, showPoi, POI_NOTICE, CATEGORIES,
 } from '../components/poi-layer.js';
 import {
-  buildCourse, lodgingsOnCourse, planItinerary, lodgingKey, coursePart, DEFAULT_RADIUS_KM, CROSS_DETOURS, sliceCourse, courseStops,
+  buildCourse, poisOnCourse, planItinerary, lodgingKey, coursePart, DEFAULT_RADIUS_KM, CROSS_DETOURS, sliceCourse, courseStops,
 } from '../utils/itinerary.js';
 import {
   loadElevation, climbStats, profileSvg, courseTop, reverseProfile, composeProfile, sliceProfile,
@@ -137,10 +137,36 @@ function weatherCells(w, heading) {
 }
 
 // 짠 일정을 엑셀 파일로 (사용자 요청: 깔끔하게 만들어서 엑셀로 내려받기).
-// '일정' 시트는 하루 한 줄(거리·고도·묵을 곳), '지나는 곳' 시트는 그날 지나는 곳마다 한 줄(구간 거리·날씨).
+// '일정' 시트는 하루 한 줄(거리·고도·묵을 곳). 날짜마다 상세 시트(사용자 요청)를 하나씩 두고,
+// 거기에 그날 지나는 곳(구간 거리·날씨)과 보급할 곳(길 위 편의점·식당·카페, 사용자 요청)을 적는다.
 // 날씨는 불러온 것만 넣는다(출발일이 멀거나 지난 날짜면 빈칸).
+const SUPPLY_BUCKET_KM = 5; // 보급할 곳은 이 거리마다 한 줄, 종류마다 한 곳씩 (도시에서는 식당이 수백 곳이다)
+const SUPPLY_GAP_KM = 15; // 보급할 곳이 이보다 길게 없으면 위에 알린다
+const SUPPLY_CATEGORIES = ['convenience', 'restaurant', 'cafe'];
+
+// 그날 길 위의 보급할 곳을 SUPPLY_BUCKET_KM마다 한 줄로: { from, to (그날 출발에서 km), picks: { 종류: 시설 } }.
+// 종류마다 그 구간 첫 곳(전화번호가 있는 곳 먼저). 아무것도 없는 구간이 이어지면 한 줄로 묶는다.
+function daySupplies(d, supplies) {
+  const dayKm = d.end - d.start;
+  const buckets = Array.from({ length: Math.max(1, Math.ceil(dayKm / SUPPLY_BUCKET_KM - 0.01)) }, (_, b) => ({
+    from: b * SUPPLY_BUCKET_KM, to: Math.min((b + 1) * SUPPLY_BUCKET_KM, dayKm), picks: {},
+  }));
+  supplies.filter((p) => p.km > d.start && p.km <= d.end).forEach((p) => {
+    const bucket = buckets[Math.min(buckets.length - 1, Math.floor((p.km - d.start) / SUPPLY_BUCKET_KM))];
+    const had = bucket.picks[p.category];
+    if (!had || (!had.phone && p.phone)) bucket.picks[p.category] = p;
+  });
+  return buckets.reduce((out, b) => {
+    const prev = out[out.length - 1];
+    const empty = !Object.keys(b.picks).length;
+    if (empty && prev?.empty) prev.to = b.to;
+    else out.push({ ...b, empty });
+    return out;
+  }, []);
+}
+
 function planWorkbook({
-  title, summary, notes, days, startDate, lodgingOf, profile,
+  title, summary, notes, days, startDate, lodgingOf, profile, supplies,
 }) {
   const dateText = (i) => (startDate
     ? dayDate(startDate, i).toLocaleDateString(locale, { month: 'long', day: 'numeric', weekday: 'short' }) : '');
@@ -148,6 +174,15 @@ function planWorkbook({
   const text = (v) => ({ v, s: 'text' });
   const num = (v) => ({ v, s: 'num' });
   const head = (labels) => labels.map((v) => ({ v, s: 'head' }));
+  const lodgingName = (d) => {
+    const lodging = lodgingOf(d);
+    return lodging ? (lodging.name || t('이름 없는 숙소')) : '';
+  };
+  const memoOf = (d) => [
+    ...d.transit.map((leg) => `${shortName(leg.from)} → ${shortName(leg.to)} ${t('버스 이동 (거리에서 뺌)')}`),
+    d.final ? t('도착') : '',
+    d.noLodging ? t('묵을 곳을 아직 정하지 못했어요') : '',
+  ].filter(Boolean).join(' · ');
 
   const planHead = head([t('일차'), t('날짜'), t('출발'), t('도착'), t('거리 (km)'), t('오르막 (m)'), t('내리막 (m)'),
     t('최고 고도 (m)'), t('지나는 인증센터'), t('묵을 곳'), t('전화번호'), t('메모')]);
@@ -157,20 +192,12 @@ function planWorkbook({
     ...notes.map((n) => [{ v: n, s: 'sub' }]),
     [],
   ];
-  const planRows = days.map((d, i) => {
-    const lodging = lodgingOf(d);
-    const memo = [
-      ...d.transit.map((leg) => `${shortName(leg.from)} → ${shortName(leg.to)} ${t('버스 이동 (거리에서 뺌)')}`),
-      d.final ? t('도착') : '',
-      d.noLodging ? t('묵을 곳을 아직 정하지 못했어요') : '',
-    ].filter(Boolean).join(' · ');
-    return [
-      text(t('{n}일차', { n: i + 1 })), text(dateText(i)), text(d.from), text(d.to), num(km(d.end - d.start)),
-      num(d.climb?.up ?? null), num(d.climb?.down ?? null), num(d.climb?.max ?? null),
-      { v: d.waypoints.slice(1, -1).map((wp) => wp.label).join(', '), s: 'wrap' },
-      text(d.final ? '' : lodging ? (lodging.name || t('이름 없는 숙소')) : ''), text(lodging?.phone ?? ''), { v: memo, s: 'wrap' },
-    ];
-  });
+  const planRows = days.map((d, i) => [
+    text(t('{n}일차', { n: i + 1 })), text(dateText(i)), text(d.from), text(d.to), num(km(d.end - d.start)),
+    num(d.climb?.up ?? null), num(d.climb?.down ?? null), num(d.climb?.max ?? null),
+    { v: d.waypoints.slice(1, -1).map((wp) => wp.label).join(', '), s: 'wrap' },
+    text(d.final ? '' : lodgingName(d)), text(d.final ? '' : lodgingOf(d)?.phone ?? ''), { v: memoOf(d), s: 'wrap' },
+  ]);
   const sum = (f) => days.reduce((n, d) => n + (f(d) ?? 0), 0);
   const totalRow = [
     { v: t('합계'), s: 'total' }, { v: '', s: 'total' }, { v: '', s: 'total' }, { v: '', s: 'total' },
@@ -180,8 +207,8 @@ function planWorkbook({
     { v: profile ? Math.max(...days.map((d) => d.climb?.max ?? 0)) : null, s: 'totalNum' },
     ...Array(4).fill({ v: '', s: 'total' }),
   ];
-  // 제목·안내 줄은 표 폭만큼 합친다 (끝의 빈 줄은 빼고)
-  const wide = (rows, last) => rows.slice(0, -1).map((_, r) => `A${r + 1}:${last}${r + 1}`);
+  // 제목·안내 줄은 표 폭만큼 합친다
+  const wide = (rowNos, last) => rowNos.map((r) => `A${r}:${last}${r}`);
   // 날짜 줄은 모두 같은 높이로 (사용자 지적: 줄바꿈 수에 따라 줄 높이가 들쭉날쭉해 보기 안 좋았다).
   // 줄바꿈하는 칸의 글 길이로 가장 많은 줄 수를 어림해 모든 날에 같은 높이를 준다 (한글·한자는 숫자 폭의 약 1.8배).
   const planCols = [8, 16, 18, 18, 10, 10, 10, 12, 44, 28, 15, 26];
@@ -189,46 +216,92 @@ function planWorkbook({
   const linesOf = (row) => Math.max(1, ...row.map((cell, c) => (cell.s === 'wrap' ? Math.ceil(units(cell.v) / (planCols[c] - 1)) : 1)));
   const rowHeight = 16 * Math.max(1, ...planRows.map(linesOf)) + 8;
   const bodyHeights = (first, count, h) => Object.fromEntries(Array.from({ length: count }, (_, k) => [first + k, h]));
+  const planSheet = {
+    name: t('일정'),
+    rows: [...top, planHead, ...planRows, totalRow],
+    cols: planCols,
+    merges: wide(top.slice(0, -1).map((_, r) => r + 1), 'L'),
+    freezeRows: top.length + 1,
+    heights: {
+      1: 28, [top.length + 1]: 32, ...bodyHeights(top.length + 2, planRows.length, rowHeight), [top.length + planRows.length + 2]: 24,
+    },
+  };
 
-  const wxHead = head([t('일차'), t('날짜'), t('지나는 곳'), t('다음 지점까지 (km)'), t('오르막 (m)'),
-    t('날씨'), t('최저 기온 (°C)'), t('최고 기온 (°C)'), t('강수 확률 (%)'), t('바람')]);
-  const wxRows = days.flatMap((d, i) => d.waypoints.map((wp, j) => {
-    const next = d.waypoints[j + 1];
-    const w = d.forecasts?.[j];
-    const heading = next ? bearing(wp, next) : bearing(d.waypoints[j - 1] ?? wp, wp);
-    const wind = w ? `${windName(w.windFrom)} ${w.wind.toFixed(1)}m/s ${windEffect(heading, w.windFrom).text}` : '';
-    return [
-      text(j === 0 ? t('{n}일차', { n: i + 1 }) : ''), text(j === 0 ? dateText(i) : ''), text(wp.label),
-      num(next ? km(next.km - wp.km) : null), num(next && profile ? climbStats(profile, wp.km, next.km).up : null),
-      text(w ? weatherText(w.code).text : ''), num(w ? Math.round(w.tMin) : null), num(w ? Math.round(w.tMax) : null),
-      num(w?.rain ?? null), text(wind),
-    ];
-  }));
-  const wxTop = [
-    [{ v: title, s: 'title' }],
-    [{ v: t('날씨는 그날 지나는 곳들의 예보로, 출발 {n}일 전부터 볼 수 있어요.', { n: FORECAST_DAYS }), s: 'sub' }],
-    [],
-  ];
-  return buildXlsx([
-    {
-      name: t('일정'),
-      rows: [...top, planHead, ...planRows, totalRow],
-      cols: planCols,
-      merges: wide(top, 'L'),
-      freezeRows: top.length + 1,
-      heights: {
-        1: 28, [top.length + 1]: 32, ...bodyHeights(top.length + 2, planRows.length, rowHeight), [top.length + planRows.length + 2]: 24,
-      },
-    },
-    {
-      name: t('지나는 곳'),
-      rows: [...wxTop, wxHead, ...wxRows],
-      cols: [8, 16, 22, 14, 10, 14, 11, 11, 11, 30],
-      merges: wide(wxTop, 'J'),
-      freezeRows: wxTop.length + 1,
-      heights: { 1: 28, [wxTop.length + 1]: 32, ...bodyHeights(wxTop.length + 2, wxRows.length, 22) },
-    },
-  ]);
+  // 날짜별 상세 시트: 위에 그날 요약, 아래에 지나는 곳·보급할 곳 표 (두 표가 열 너비를 같이 쓴다)
+  const daySheet = (d, i) => {
+    const rows = [];
+    const merges = [];
+    const heights = {};
+    const add = (row, { merge = false, height } = {}) => {
+      rows.push(row);
+      if (merge) merges.push(...wide([rows.length], 'H'));
+      if (height) heights[rows.length] = height;
+    };
+    const line = (v, s = 'sub') => add([{ v, s }], { merge: true });
+    add([{ v: [t('{n}일차', { n: i + 1 }), dateText(i)].filter(Boolean).join(' · '), s: 'title' }], { merge: true, height: 28 });
+    line([`${d.from} → ${d.to}`, `${km(d.end - d.start)}km`,
+      d.climb && t('오르막 {m}m', { m: d.climb.up }), d.climb && `${t('내리막')} ${d.climb.down}m`,
+      d.climb && `${t('최고 고도')} ${d.climb.max}m`].filter(Boolean).join(' · '));
+    if (!d.final) {
+      const lodging = lodgingOf(d);
+      line(lodging ? `${t('묵을 곳')}: ${lodgingName(d)}${lodging.phone ? ` (${lodging.phone})` : ''}` : t('묵을 곳을 아직 정하지 못했어요'));
+    }
+    const memo = d.transit.map((leg) => `🚌 ${shortName(leg.from)} → ${shortName(leg.to)} ${t('버스 이동 (거리에서 뺌)')}`).join(' · ');
+    if (memo) line(memo);
+    add([]);
+
+    line(t('지나는 곳'), 'section');
+    add(head([t('지나는 곳'), t('출발에서 (km)'), t('다음 지점까지 (km)'), t('오르막 (m)'), t('날씨'),
+      t('기온 (°C)'), t('강수 확률 (%)'), t('바람')]), { height: 32 });
+    d.waypoints.forEach((wp, j) => {
+      const next = d.waypoints[j + 1];
+      const w = d.forecasts?.[j];
+      const heading = next ? bearing(wp, next) : bearing(d.waypoints[j - 1] ?? wp, wp);
+      add([
+        text(wp.label), num(km(wp.km - d.start)), num(next ? km(next.km - wp.km) : null),
+        num(next && profile ? climbStats(profile, wp.km, next.km).up : null),
+        text(w ? weatherText(w.code).text : ''), text(w ? `${Math.round(w.tMin)}° / ${Math.round(w.tMax)}°` : ''),
+        num(w?.rain ?? null), text(w ? `${windName(w.windFrom)} ${w.wind.toFixed(1)}m/s ${windEffect(heading, w.windFrom).text}` : ''),
+      ], { height: 22 });
+    });
+    if (!d.forecasts) line(t('날씨는 그날 지나는 곳들의 예보로, 출발 {n}일 전부터 볼 수 있어요.', { n: FORECAST_DAYS }));
+    add([]);
+
+    // 보급할 곳: 5km마다 한 줄, 편의점·식당·카페를 한 칸씩 (이름 아래 줄에 전화번호). 없는 구간은 묶어서 알린다.
+    // 칸은 위 표와 열을 같이 쓴다: A 구간 km, B:C 편의점, D:E 식당, F:G 카페, H 지나는 곳 사이
+    const stretches = daySupplies(d, supplies);
+    line(t('보급할 곳 (편의점·식당·카페)'), 'section');
+    const longest = Math.max(0, ...stretches.filter((s) => s.empty).map((s) => s.to - s.from));
+    if (longest >= SUPPLY_GAP_KM) line(t('보급할 곳이 {km}km 넘게 없는 구간이 있어요. 물과 간식을 넉넉히 챙기세요.', { km: km(longest) }), 'warn');
+    const label = (id) => CATEGORIES.find((c) => c.id === id)?.label ?? '';
+    add(head([t('출발에서 (km)'), label('convenience'), '', label('restaurant'), '', label('cafe'), '', t('구간')]), { height: 32 });
+    const pair = (r) => [`B${r}:C${r}`, `D${r}:E${r}`, `F${r}:G${r}`];
+    merges.push(...pair(rows.length));
+    const cellText = (p) => (p ? [p.name || t('이름 없는 곳'), p.phone].filter(Boolean).join('\n') : '');
+    const supplyLines = Math.max(1, ...stretches.flatMap((s) => SUPPLY_CATEGORIES.map((c, k) => cellText(s.picks[c]).split('\n')
+      .reduce((n, part) => n + Math.ceil(units(part) / ([26, 25, 24][k] - 1) || 1), 0))));
+    stretches.forEach((s) => {
+      const mid = d.start + (s.from + s.to) / 2;
+      const after = [...d.waypoints].reverse().find((wp) => wp.km <= mid) ?? d.waypoints[0];
+      const before = d.waypoints.find((wp) => wp.km > mid);
+      const leg = text(before ? `${after.label} → ${before.label}` : after.label);
+      const range = text(`${km(s.from)}–${km(s.to)}km`);
+      if (s.empty) {
+        add([range, { v: t('보급할 곳 없음'), s: s.to - s.from >= SUPPLY_GAP_KM ? 'warnCell' : 'text' }, ...Array(5).fill({ v: '', s: 'text' }), leg],
+          { height: 16 * supplyLines + 8 });
+        merges.push(`B${rows.length}:G${rows.length}`);
+        return;
+      }
+      const cell = (c) => ({ v: cellText(s.picks[c]), s: 'wrap' });
+      add([range, cell('convenience'), cell(''), cell('restaurant'), cell(''), cell('cafe'), cell(''), leg], { height: 16 * supplyLines + 8 });
+      merges.push(...pair(rows.length));
+    });
+    line(t('지도에 안 나온 숙소나 식당도 있을 수 있어요. 문을 닫았거나 영업시간이 바뀐 곳도 있으니, 가기 전에 전화나 지도 앱으로 한 번 확인해 보세요.'));
+    return {
+      name: t('{n}일차', { n: i + 1 }), rows, merges, heights, cols: [26, 12, 14, 11, 14, 12, 12, 30],
+    };
+  };
+  return buildXlsx([planSheet, ...days.map(daySheet)]);
 }
 
 // 사용법 시연용 (사용자 요청: 국토종주 예시로 보여 준다). 지금 조건을 읽어 두고, 예시로 바꿨다가 되돌린다.
@@ -410,6 +483,7 @@ export function plannerPage() {
   let shownMapKey = null; // 지도에 그린 코스·구간 (render가 바뀔 때만 다시 그린다)
 
   let lodgings = null;
+  let supplyCache = null; // 엑셀의 보급할 곳: { key: 코스, list: 코스 위 편의점·식당·카페 }
   let elevation = null;
   let renderId = 0;
   const debug = { days: [], weather: [] };
@@ -540,7 +614,7 @@ export function plannerPage() {
       return;
     }
 
-    const onCourse = lodgingsOnCourse(course, lodgings);
+    const onCourse = poisOnCourse(course, lodgings);
     // 지도의 숙소도 짜는 코스 위 숙소만 보인다 (사용자 지적: 엉뚱한 곳 숙소까지 나왔다)
     const courseKey = `${preset.id}|${reverse}|${JSON.stringify(detourModes)}|${stops.from.index}|${stops.to.index}`;
     if (courseKey !== filterKey) {
@@ -596,7 +670,16 @@ export function plannerPage() {
       <ol class="plan-days"></ol>
       <button class="secondary plan-excel" type="button">${esc(t('엑셀 파일로 내려받기'))}</button>
     `;
-    result.querySelector('.plan-excel').addEventListener('click', () => {
+    const excelButton = result.querySelector('.plan-excel');
+    excelButton.addEventListener('click', async () => {
+      // 보급할 곳(편의점·식당·카페)은 내려받을 때만 코스에 대 본다 (식당만 5만 곳이 넘는다). 같은 코스면 다시 쓴다.
+      excelButton.disabled = true;
+      if (supplyCache?.key !== courseKey) {
+        const pois = (await getPois()).filter((p) => SUPPLY_CATEGORIES.includes(p.category));
+        supplyCache = { key: courseKey, list: poisOnCourse(course, pois) };
+      }
+      excelButton.disabled = false;
+      if (id !== renderId) return; // 그사이 일정을 다시 그렸으면 새 버튼으로 다시 누른다
       const name = preset.name.replace(/ \([^)]*km\)$/, '');
       const route = stops.to.loopEnd ? t('{name} 출발, 한 바퀴', { name: stops.from.name }) : `${stops.from.name} → ${stops.to.name}`;
       const detourText = CROSS_DETOURS.filter((x) => detourModes[x.id])
@@ -615,6 +698,7 @@ export function plannerPage() {
         startDate,
         profile,
         lodgingOf: (d) => d.pickKey && onCourse.find((l) => lodgingKey(l) === d.pickKey),
+        supplies: supplyCache.list,
       });
       const safe = (s) => s.replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
       downloadBlob(blob, `${safe(`${t('{name} 일정', { name })} ${route}`)}${startDate ? ` ${startDate}` : ''}.xlsx`);

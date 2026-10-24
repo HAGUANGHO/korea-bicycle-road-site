@@ -726,8 +726,6 @@
   "지나는 곳": "Puntos de paso",
   "다음 지점까지 (km)": "Hasta el siguiente punto (km)",
   "날씨": "Tiempo",
-  "최저 기온 (°C)": "Mínima (°C)",
-  "최고 기온 (°C)": "Máxima (°C)",
   "강수 확률 (%)": "Probabilidad de lluvia (%)",
   "바람": "Viento",
   "엑셀 파일로 내려받기": "Descargar en Excel",
@@ -735,6 +733,13 @@
   "{date} 출발": "Salida el {date}",
   "거리와 고도는 추정치라 실제와 조금 다를 수 있어요.": "La distancia y la altitud son estimaciones y pueden variar un poco.",
   "엑셀로 받아 두기": "Guárdalo en Excel",
-  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 날짜마다 거리·오르막·묵을 곳과 전화번호가 한 줄씩, 지나는 곳마다 날씨가 따로 정리돼 있어요.": "Cuando tengas el plan, guárdalo con [[Descargar en Excel]]. Cada día ocupa una fila con distancia, subida, alojamiento y teléfono, y el tiempo de cada punto de paso va en otra hoja.",
-  "시설 목록은 장소 위치만 모아 보여 주는 거라, 자전거길에서 가까워 보여도 자전거로는 갈 수 없거나 한참 돌아가야 하는 곳도 있어요.": "Esta lista solo reúne la ubicación de los lugares, así que algunos que parecen cerca del carril bici pueden no ser accesibles en bici o exigir un gran rodeo."
+  "시설 목록은 장소 위치만 모아 보여 주는 거라, 자전거길에서 가까워 보여도 자전거로는 갈 수 없거나 한참 돌아가야 하는 곳도 있어요.": "Esta lista solo reúne la ubicación de los lugares, así que algunos que parecen cerca del carril bici pueden no ser accesibles en bici o exigir un gran rodeo.",
+  "출발에서 (km)": "Desde la salida (km)",
+  "기온 (°C)": "Temp. (°C)",
+  "보급할 곳 (편의점·식당·카페)": "Dónde abastecerse (tiendas, restaurantes, cafés)",
+  "보급할 곳이 {km}km 넘게 없는 구간이 있어요. 물과 간식을 넉넉히 챙기세요.": "Hay un tramo de más de {km}km sin dónde abastecerse. Lleva agua y algo de comer de sobra.",
+  "구간": "Tramo",
+  "이름 없는 곳": "Lugar sin nombre",
+  "보급할 곳 없음": "Sin avituallamiento",
+  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 첫 장에 날짜마다 거리·오르막·묵을 곳이 한 줄씩 정리되고, 날짜별 장에는 지나는 곳의 날씨와 5km마다 보급할 곳(편의점·식당·카페)이 들어 있어요.": "Cuando tengas el plan, guárdalo con [[Descargar en Excel]]. La primera hoja tiene una fila por día con distancia, subida y alojamiento, y cada día tiene su propia hoja con el tiempo en cada punto de paso y dónde abastecerse (tiendas, restaurantes, cafés) cada 5km."
 }

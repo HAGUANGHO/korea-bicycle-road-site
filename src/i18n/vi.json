@@ -726,8 +726,6 @@
   "지나는 곳": "Điểm đi qua",
   "다음 지점까지 (km)": "Đến điểm tiếp theo (km)",
   "날씨": "Thời tiết",
-  "최저 기온 (°C)": "Thấp nhất (°C)",
-  "최고 기온 (°C)": "Cao nhất (°C)",
   "강수 확률 (%)": "Khả năng mưa (%)",
   "바람": "Gió",
   "엑셀 파일로 내려받기": "Tải về tệp Excel",
@@ -735,6 +733,13 @@
   "{date} 출발": "Khởi hành {date}",
   "거리와 고도는 추정치라 실제와 조금 다를 수 있어요.": "Quãng đường và độ cao là ước tính, có thể hơi khác thực tế.",
   "엑셀로 받아 두기": "Lưu thành Excel",
-  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 날짜마다 거리·오르막·묵을 곳과 전화번호가 한 줄씩, 지나는 곳마다 날씨가 따로 정리돼 있어요.": "Khi lịch trình xong, bạn có thể lưu bằng [[Tải về tệp Excel]]. Mỗi ngày một dòng với quãng đường, leo dốc, chỗ ở và số điện thoại; thời tiết từng điểm đi qua nằm ở trang tính riêng.",
-  "시설 목록은 장소 위치만 모아 보여 주는 거라, 자전거길에서 가까워 보여도 자전거로는 갈 수 없거나 한참 돌아가야 하는 곳도 있어요.": "Danh sách này chỉ gom vị trí các địa điểm, nên có nơi trông gần đường xe đạp nhưng thực tế không đi xe đạp tới được hoặc phải đi vòng rất xa."
+  "시설 목록은 장소 위치만 모아 보여 주는 거라, 자전거길에서 가까워 보여도 자전거로는 갈 수 없거나 한참 돌아가야 하는 곳도 있어요.": "Danh sách này chỉ gom vị trí các địa điểm, nên có nơi trông gần đường xe đạp nhưng thực tế không đi xe đạp tới được hoặc phải đi vòng rất xa.",
+  "출발에서 (km)": "Từ điểm xuất phát (km)",
+  "기온 (°C)": "Nhiệt độ (°C)",
+  "보급할 곳 (편의점·식당·카페)": "Chỗ tiếp tế (cửa hàng tiện lợi, quán ăn, quán cà phê)",
+  "보급할 곳이 {km}km 넘게 없는 구간이 있어요. 물과 간식을 넉넉히 챙기세요.": "Có đoạn hơn {km}km không có chỗ tiếp tế. Hãy mang đủ nước và đồ ăn nhẹ.",
+  "구간": "Đoạn",
+  "이름 없는 곳": "Nơi không tên",
+  "보급할 곳 없음": "Không có chỗ tiếp tế",
+  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 첫 장에 날짜마다 거리·오르막·묵을 곳이 한 줄씩 정리되고, 날짜별 장에는 지나는 곳의 날씨와 5km마다 보급할 곳(편의점·식당·카페)이 들어 있어요.": "Khi lịch trình xong, bạn có thể lưu bằng [[Tải về tệp Excel]]. Trang đầu có mỗi ngày một dòng với quãng đường, leo dốc và chỗ ở; mỗi ngày còn có trang riêng với thời tiết từng điểm đi qua và chỗ tiếp tế (cửa hàng tiện lợi, quán ăn, quán cà phê) cứ mỗi 5km."
 }

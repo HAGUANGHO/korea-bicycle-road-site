@@ -5,17 +5,19 @@
 //   rows: 줄마다 칸 배열. 칸은 값(글·숫자·null) 또는 { v, s } — s는 STYLES의 이름
 //   cols: 열 너비(글자 수), merges: ['A1:L1'], freezeRows: 위에서 고정할 줄 수, heights: { 줄 번호(1부터): 높이(pt) }
 
-const STYLES = ['', 'title', 'sub', 'label', 'head', 'text', 'num', 'total', 'totalNum', 'wrap'];
+const STYLES = ['', 'title', 'sub', 'label', 'head', 'text', 'num', 'total', 'totalNum', 'wrap', 'section', 'warn', 'warnCell'];
 
 const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
 <numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0"/></numFmts>
-<fonts count="5">
+<fonts count="7">
 <font><sz val="10"/><name val="Malgun Gothic"/><family val="2"/></font>
 <font><b/><sz val="16"/><color rgb="FF1F6F43"/><name val="Malgun Gothic"/><family val="2"/></font>
 <font><sz val="10"/><color rgb="FF666666"/><name val="Malgun Gothic"/><family val="2"/></font>
 <font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Malgun Gothic"/><family val="2"/></font>
 <font><b/><sz val="10"/><name val="Malgun Gothic"/><family val="2"/></font>
+<font><b/><sz val="12"/><color rgb="FF1F6F43"/><name val="Malgun Gothic"/><family val="2"/></font>
+<font><b/><sz val="10"/><color rgb="FFB45309"/><name val="Malgun Gothic"/><family val="2"/></font>
 </fonts>
 <fills count="5">
 <fill><patternFill patternType="none"/></fill>
@@ -29,7 +31,7 @@ const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <border><left style="thin"><color rgb="FFC9D3CD"/></left><right style="thin"><color rgb="FFC9D3CD"/></right><top style="thin"><color rgb="FFC9D3CD"/></top><bottom style="thin"><color rgb="FFC9D3CD"/></bottom><diagonal/></border>
 </borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="10">
+<cellXfs count="13">
 <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
 <xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment vertical="center"/></xf>
 <xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
@@ -40,6 +42,9 @@ const STYLES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xf numFmtId="0" fontId="4" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>
 <xf numFmtId="164" fontId="4" fillId="3" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="right" vertical="center"/></xf>
 <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="5" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="bottom"/></xf>
+<xf numFmtId="0" fontId="6" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="0" fontId="6" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
 </cellXfs>
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
