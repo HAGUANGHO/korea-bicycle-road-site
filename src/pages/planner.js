@@ -250,7 +250,7 @@ function planWorkbook({
     if (memo) line(memo);
     add([]);
 
-    line(t('지나는 곳'), 'section');
+    line(t('가는 길과 날씨'), 'section');
     add(head([t('지나는 곳'), t('출발에서 (km)'), t('다음 지점까지 (km)'), t('오르막 (m)'), t('날씨'),
       t('기온 (°C)'), t('강수 확률 (%)'), t('바람')]), { height: 32 });
     d.waypoints.forEach((wp, j) => {
@@ -278,27 +278,35 @@ function planWorkbook({
     const pair = (r) => [`B${r}:C${r}`, `D${r}:E${r}`, `F${r}:G${r}`];
     merges.push(...pair(rows.length));
     const cellText = (p) => (p ? [p.name || t('이름 없는 곳'), p.phone].filter(Boolean).join('\n') : '');
-    const supplyLines = Math.max(1, ...stretches.flatMap((s) => SUPPLY_CATEGORIES.map((c, k) => cellText(s.picks[c]).split('\n')
-      .reduce((n, part) => n + Math.ceil(units(part) / ([26, 25, 24][k] - 1) || 1), 0))));
-    stretches.forEach((s) => {
+    // 그 구간이 어느 지나는 곳 사이인지
+    const legText = (s) => {
       const mid = d.start + (s.from + s.to) / 2;
       const after = [...d.waypoints].reverse().find((wp) => wp.km <= mid) ?? d.waypoints[0];
       const before = d.waypoints.find((wp) => wp.km > mid);
-      const leg = text(before ? `${after.label} → ${before.label}` : after.label);
+      return before ? `${after.label} → ${before.label}` : after.label;
+    };
+    // 줄 높이는 모두 같게: 가장 많이 줄바꿈되는 칸에 맞춘다 (칸 너비: 편의점 B:C, 식당 D:E, 카페 F:G, 구간 H)
+    const linesIn = (value, width) => String(value).split('\n').reduce((n, part) => n + Math.max(1, Math.ceil(units(part) / (width - 1))), 0);
+    const supplyLines = Math.max(1, ...stretches.flatMap((s) => [
+      ...SUPPLY_CATEGORIES.map((c, k) => linesIn(cellText(s.picks[c]), [26, 25, 24][k])), linesIn(legText(s), 34),
+    ]));
+    const supplyHeight = 14 * supplyLines + 10;
+    stretches.forEach((s) => {
+      const leg = { v: legText(s), s: 'wrap' };
       const range = text(`${km(s.from)}–${km(s.to)}km`);
       if (s.empty) {
         add([range, { v: t('보급할 곳 없음'), s: s.to - s.from >= SUPPLY_GAP_KM ? 'warnCell' : 'text' }, ...Array(5).fill({ v: '', s: 'text' }), leg],
-          { height: 16 * supplyLines + 8 });
+          { height: supplyHeight });
         merges.push(`B${rows.length}:G${rows.length}`);
         return;
       }
       const cell = (c) => ({ v: cellText(s.picks[c]), s: 'wrap' });
-      add([range, cell('convenience'), cell(''), cell('restaurant'), cell(''), cell('cafe'), cell(''), leg], { height: 16 * supplyLines + 8 });
+      add([range, cell('convenience'), cell(''), cell('restaurant'), cell(''), cell('cafe'), cell(''), leg], { height: supplyHeight });
       merges.push(...pair(rows.length));
     });
     line(t('지도에 안 나온 숙소나 식당도 있을 수 있어요. 문을 닫았거나 영업시간이 바뀐 곳도 있으니, 가기 전에 전화나 지도 앱으로 한 번 확인해 보세요.'));
     return {
-      name: t('{n}일차', { n: i + 1 }), rows, merges, heights, cols: [26, 12, 14, 11, 14, 12, 12, 30],
+      name: t('{n}일차', { n: i + 1 }), rows, merges, heights, cols: [26, 12, 14, 11, 14, 12, 12, 34],
     };
   };
   return buildXlsx([planSheet, ...days.map(daySheet)]);

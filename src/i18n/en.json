@@ -741,5 +741,6 @@
   "구간": "Section",
   "이름 없는 곳": "Unnamed place",
   "보급할 곳 없음": "Nowhere to resupply",
-  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 첫 장에 날짜마다 거리·오르막·묵을 곳이 한 줄씩 정리되고, 날짜별 장에는 지나는 곳의 날씨와 5km마다 보급할 곳(편의점·식당·카페)이 들어 있어요.": "Once your plan is ready, save it with [[Download as Excel]]. The first sheet has one row per day with distance, climb and where to stay, and each day gets its own sheet with weather at each waypoint and places to resupply (convenience stores, restaurants, cafes) every 5km."
+  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 첫 장에 날짜마다 거리·오르막·묵을 곳이 한 줄씩 정리되고, 날짜별 장에는 지나는 곳의 날씨와 5km마다 보급할 곳(편의점·식당·카페)이 들어 있어요.": "Once your plan is ready, save it with [[Download as Excel]]. The first sheet has one row per day with distance, climb and where to stay, and each day gets its own sheet with weather at each waypoint and places to resupply (convenience stores, restaurants, cafes) every 5km.",
+  "가는 길과 날씨": "Route and weather"
 }

@@ -741,5 +741,6 @@
   "구간": "Tronçon",
   "이름 없는 곳": "Lieu sans nom",
   "보급할 곳 없음": "Aucun ravitaillement",
-  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 첫 장에 날짜마다 거리·오르막·묵을 곳이 한 줄씩 정리되고, 날짜별 장에는 지나는 곳의 날씨와 5km마다 보급할 곳(편의점·식당·카페)이 들어 있어요.": "Une fois le plan prêt, enregistrez-le avec [[Télécharger en Excel]]. La première feuille donne une ligne par jour avec la distance, la montée et l’hébergement, et chaque jour a sa feuille avec la météo à chaque point de passage et où se ravitailler (supérettes, restaurants, cafés) tous les 5km."
+  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 첫 장에 날짜마다 거리·오르막·묵을 곳이 한 줄씩 정리되고, 날짜별 장에는 지나는 곳의 날씨와 5km마다 보급할 곳(편의점·식당·카페)이 들어 있어요.": "Une fois le plan prêt, enregistrez-le avec [[Télécharger en Excel]]. La première feuille donne une ligne par jour avec la distance, la montée et l’hébergement, et chaque jour a sa feuille avec la météo à chaque point de passage et où se ravitailler (supérettes, restaurants, cafés) tous les 5km.",
+  "가는 길과 날씨": "Itinéraire et météo"
 }

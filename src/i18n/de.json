@@ -741,5 +741,6 @@
   "구간": "Abschnitt",
   "이름 없는 곳": "Ort ohne Namen",
   "보급할 곳 없음": "Keine Verpflegung",
-  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 첫 장에 날짜마다 거리·오르막·묵을 곳이 한 줄씩 정리되고, 날짜별 장에는 지나는 곳의 날씨와 5km마다 보급할 곳(편의점·식당·카페)이 들어 있어요.": "Ist der Plan fertig, speicherst du ihn mit [[Als Excel herunterladen]]. Das erste Blatt hat eine Zeile pro Tag mit Strecke, Anstieg und Unterkunft; jeder Tag hat ein eigenes Blatt mit dem Wetter an jedem Wegpunkt und Verpflegung (Läden, Restaurants, Cafés) alle 5km."
+  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 첫 장에 날짜마다 거리·오르막·묵을 곳이 한 줄씩 정리되고, 날짜별 장에는 지나는 곳의 날씨와 5km마다 보급할 곳(편의점·식당·카페)이 들어 있어요.": "Ist der Plan fertig, speicherst du ihn mit [[Als Excel herunterladen]]. Das erste Blatt hat eine Zeile pro Tag mit Strecke, Anstieg und Unterkunft; jeder Tag hat ein eigenes Blatt mit dem Wetter an jedem Wegpunkt und Verpflegung (Läden, Restaurants, Cafés) alle 5km.",
+  "가는 길과 날씨": "Strecke und Wetter"
 }

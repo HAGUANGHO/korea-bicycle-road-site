@@ -741,5 +741,6 @@
   "구간": "Ruas",
   "이름 없는 곳": "Tempat tanpa nama",
   "보급할 곳 없음": "Tidak ada tempat isi perbekalan",
-  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 첫 장에 날짜마다 거리·오르막·묵을 곳이 한 줄씩 정리되고, 날짜별 장에는 지나는 곳의 날씨와 5km마다 보급할 곳(편의점·식당·카페)이 들어 있어요.": "Setelah rencana jadi, simpan dengan [[Unduh sebagai Excel]]. Lembar pertama berisi satu baris per hari dengan jarak, tanjakan, dan tempat menginap; tiap hari juga punya lembar sendiri berisi cuaca di titik yang dilewati dan tempat isi perbekalan (minimarket, rumah makan, kafe) setiap 5km."
+  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 첫 장에 날짜마다 거리·오르막·묵을 곳이 한 줄씩 정리되고, 날짜별 장에는 지나는 곳의 날씨와 5km마다 보급할 곳(편의점·식당·카페)이 들어 있어요.": "Setelah rencana jadi, simpan dengan [[Unduh sebagai Excel]]. Lembar pertama berisi satu baris per hari dengan jarak, tanjakan, dan tempat menginap; tiap hari juga punya lembar sendiri berisi cuaca di titik yang dilewati dan tempat isi perbekalan (minimarket, rumah makan, kafe) setiap 5km.",
+  "가는 길과 날씨": "Rute dan cuaca"
 }

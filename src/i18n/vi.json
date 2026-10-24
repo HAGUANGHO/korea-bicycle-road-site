@@ -741,5 +741,6 @@
   "구간": "Đoạn",
   "이름 없는 곳": "Nơi không tên",
   "보급할 곳 없음": "Không có chỗ tiếp tế",
-  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 첫 장에 날짜마다 거리·오르막·묵을 곳이 한 줄씩 정리되고, 날짜별 장에는 지나는 곳의 날씨와 5km마다 보급할 곳(편의점·식당·카페)이 들어 있어요.": "Khi lịch trình xong, bạn có thể lưu bằng [[Tải về tệp Excel]]. Trang đầu có mỗi ngày một dòng với quãng đường, leo dốc và chỗ ở; mỗi ngày còn có trang riêng với thời tiết từng điểm đi qua và chỗ tiếp tế (cửa hàng tiện lợi, quán ăn, quán cà phê) cứ mỗi 5km."
+  "다 짠 일정은 [[엑셀 파일로 내려받기]]로 받아 둘 수 있어요. 첫 장에 날짜마다 거리·오르막·묵을 곳이 한 줄씩 정리되고, 날짜별 장에는 지나는 곳의 날씨와 5km마다 보급할 곳(편의점·식당·카페)이 들어 있어요.": "Khi lịch trình xong, bạn có thể lưu bằng [[Tải về tệp Excel]]. Trang đầu có mỗi ngày một dòng với quãng đường, leo dốc và chỗ ở; mỗi ngày còn có trang riêng với thời tiết từng điểm đi qua và chỗ tiếp tế (cửa hàng tiện lợi, quán ăn, quán cà phê) cứ mỗi 5km.",
+  "가는 길과 날씨": "Đường đi và thời tiết"
 }
