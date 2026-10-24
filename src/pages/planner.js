@@ -182,6 +182,13 @@ function planWorkbook({
   ];
   // 제목·안내 줄은 표 폭만큼 합친다 (끝의 빈 줄은 빼고)
   const wide = (rows, last) => rows.slice(0, -1).map((_, r) => `A${r + 1}:${last}${r + 1}`);
+  // 날짜 줄은 모두 같은 높이로 (사용자 지적: 줄바꿈 수에 따라 줄 높이가 들쭉날쭉해 보기 안 좋았다).
+  // 줄바꿈하는 칸의 글 길이로 가장 많은 줄 수를 어림해 모든 날에 같은 높이를 준다 (한글·한자는 숫자 폭의 약 1.8배).
+  const planCols = [8, 16, 18, 18, 10, 10, 10, 12, 44, 28, 15, 26];
+  const units = (s) => [...String(s ?? '')].reduce((n, c) => n + (/[ᄀ-ᇿ⺀-鿿가-힯＀-￯]/.test(c) ? 1.8 : 1), 0);
+  const linesOf = (row) => Math.max(1, ...row.map((cell, c) => (cell.s === 'wrap' ? Math.ceil(units(cell.v) / (planCols[c] - 1)) : 1)));
+  const rowHeight = 16 * Math.max(1, ...planRows.map(linesOf)) + 8;
+  const bodyHeights = (first, count, h) => Object.fromEntries(Array.from({ length: count }, (_, k) => [first + k, h]));
 
   const wxHead = head([t('일차'), t('날짜'), t('지나는 곳'), t('다음 지점까지 (km)'), t('오르막 (m)'),
     t('날씨'), t('최저 기온 (°C)'), t('최고 기온 (°C)'), t('강수 확률 (%)'), t('바람')]);
@@ -206,10 +213,12 @@ function planWorkbook({
     {
       name: t('일정'),
       rows: [...top, planHead, ...planRows, totalRow],
-      cols: [8, 16, 18, 18, 10, 10, 10, 12, 30, 28, 15, 30],
+      cols: planCols,
       merges: wide(top, 'L'),
       freezeRows: top.length + 1,
-      heights: { 1: 28, [top.length + 1]: 30 },
+      heights: {
+        1: 28, [top.length + 1]: 32, ...bodyHeights(top.length + 2, planRows.length, rowHeight), [top.length + planRows.length + 2]: 24,
+      },
     },
     {
       name: t('지나는 곳'),
@@ -217,7 +226,7 @@ function planWorkbook({
       cols: [8, 16, 22, 14, 10, 14, 11, 11, 11, 30],
       merges: wide(wxTop, 'J'),
       freezeRows: wxTop.length + 1,
-      heights: { 1: 28, [wxTop.length + 1]: 30 },
+      heights: { 1: 28, [wxTop.length + 1]: 32, ...bodyHeights(wxTop.length + 2, wxRows.length, 22) },
     },
   ]);
 }
